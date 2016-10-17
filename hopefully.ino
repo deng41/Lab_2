@@ -2,16 +2,24 @@
 #include <Servo.h>
 #include"controller.h"
 int rmspeed = 50;
-int stst = 0;
 int nam = 0;
-int mup = 0;
-int timn = 10;
+int startflag = 0;
+int motor1direction = 0;
+int delaytimerforservo = 10;
+char recievedchar = '0';
+int receivednumber = 0;
+int servo2switch = 0;
 Servo myservo;  // create servo object to control a servo
-int pos = 60;    // variable to store the servo position
-
+Servo servo2; 
+int motor1position = 60;    // variable to store the servo motor1positionition
+int motor2position = 60;
+int motor2direction = 0;
+String sensormessage = "0";
+char level = '0';
+char remotecontrollermessage = '0';
 const short int BUILTIN_LED1 = 2; //GPIO2
 const short int BUILTIN_LED2 = 16;//GPIO16
-const short int HAHA = 2; //GPIO2
+
 const short int LED_PIN = 16;//GPIO16
 WiFiServer server(80); //Initialize the server on Port 80
 
@@ -39,6 +47,7 @@ digitalWrite(LED_PIN, LOW); //Initial state is ON
 
 // Handle the Request
 myservo.attach(16);
+servo2.attach(5);
 
 
 
@@ -48,29 +57,102 @@ void loop() {
   
 WiFiClient client = server.available();
 
+
+
   if (!client){ 
-    Serial.print(stst);
-    if(stst == 1)
+    //Serial.print(1);
+    
+
+    if(Serial.available())
+    {
+
+      sensormessage = Serial.readString();
+      level = sensormessage.charAt(2);
+      remotecontrollermessage = sensormessage.charAt(4);
+
+      receivednumber = level - '0';
+      servo2switch = remotecontrollermessage - '0';
+
+
+      
+      Serial.println(receivednumber);
+      Serial.println(servo2switch);
+      //hihi = char(hihi);
+      //Serial.println(hihi);
+    
+//      if(recievedchar == 'S')
+//      {
+//        Serial.println(1);
+//        Serial.println(recievedchar);
+//        if(Serial.available())
+//        {
+//          recievedchar = Serial.read();
+//          Serial.print(recievedchar);
+//        }
+//        if(Serial.available())
+//        {
+//          receivednumber = Serial.read();
+//          Serial.print(receivednumber);
+//        }
+//        if(Serial.available())
+//        {
+//          recievedchar = Serial.read();
+//          Serial.print(recievedchar);
+//        }
+//        if(Serial.available())
+//        {
+//          servo2switch = Serial.read();
+//          Serial.print(servo2switch);
+//        }
+//      }
+     }
+    //Serial.print(startflag);
+    if(startflag == 1)
     {
       
-      myservo.write(pos);              
-      delay(timn);
-      if(mup ==1)
+      myservo.write(motor1position);              
+      delay(delaytimerforservo+2*receivednumber);
+      if(motor1direction == 1)
       {
-        pos++;
-        if(pos==160)
+        motor1position++;
+        if(motor1position==160)
         {
-          mup = 0;
-          pos= pos-3;
+          motor1direction = 0;
+          motor1position= motor1position-3;
         }
       }
-      if(mup ==0)
+      if(motor1direction ==0)
       {
-        pos--;
-        if(pos==20)
+        motor1position--;
+        if(motor1position==20)
         {
-          mup = 1;
-          pos= pos+3;
+          motor1direction = 1;
+          motor1position= motor1position+3;
+        }
+      }
+    }
+    //servo2switch = 0;
+    if(servo2switch == 1)
+    {
+      
+      servo2.write(motor2position);              
+      delay(delaytimerforservo);
+      if(motor2direction == 1)
+      {
+        motor2position++;
+        if(motor2position==160)
+        {
+          motor2direction = 0;
+          motor2position= motor2position-3;
+        }
+      }
+      if(motor2direction ==0)
+      {
+        motor2position--;
+        if(motor2position==20)
+        {
+          motor2direction = 1;
+          motor2position= motor2position+3;
         }
       }
     }
@@ -79,14 +161,15 @@ return;
 } 
 Serial.write('S');
 Serial.write(rmspeed);
-//Serial.write(',');
+//
 Serial.write('A');
-Serial.write(stst);
+Serial.write(startflag);
+
 Serial.write('N');
 Serial.write(nam);
 
 //Serial.write(',');
-//Serial.write('T');
+Serial.write('T');
 
 //Looking under the hood 
 //Serial.println("Somebody has connected :)");
@@ -102,17 +185,17 @@ digitalWrite(LED_PIN, LOW);
 }
 else if (request.indexOf("/UP") != -1){ 
 rmspeed = rmspeed - 10;
-timn = timn - 2;
+delaytimerforservo = delaytimerforservo - 2;
 }
 else if (request.indexOf("/DO") != -1){ 
 rmspeed = rmspeed + 10;
-timn = timn + 2;
+delaytimerforservo = delaytimerforservo + 2;
 }
 else if (request.indexOf("/SS") != -1){ 
-stst = 0;
+startflag = 0;
 }
 else if (request.indexOf("/PL") != -1){ 
-stst = 1;
+startflag = 1;
 }
 else if (request.indexOf("/BD") != -1){ 
 nam = 1;
@@ -158,6 +241,6 @@ client.print(s); // Send the response to the client
 delay(1);
 //Serial.println("Client disonnected"); //Looking under the 
 //Serial.print('2');
-
-  
+ 
   }
+
